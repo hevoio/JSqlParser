@@ -1,0 +1,41 @@
+version: 2.1
+orbs:
+  openjdk-install: cloudesire/openjdk-install@1.2.3
+jobs:
+  build:
+    machine-image:
+    resource_class: medium
+    machine:
+      image: ubuntu-2004:202201-02
+    working_directory: ~/hevoio/JSqlParser
+    shell: /bin/bash --login
+    environment:
+      MAVEN_OPTS: -Xms2048m -Xmx2048m
+    parallelism: 1
+    steps:
+      - checkout
+      - openjdk-install/openjdk:
+            version: 8
+      - run: gradle -version
+      - restore_cache:
+          keys:
+            - 'dependency-{{ .Branch }}'
+            - dependency-
+      - run:
+          name: generate reports
+          command: mvn clean cobertura:cobertura coveralls:report
+      - save_cache:
+          key: 'dependency-{{ .Branch }}'
+          paths:
+            - ~/.m2
+            - ~/.gradle/caches/
+            - ~/.gradle/wrapper/
+workflows:
+  build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              only: /.*/
